@@ -6,9 +6,13 @@ Created on Thu Aug 12 15:10:51 2021
 """
 
 from selenium import webdriver
+from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support.expected_conditions import presence_of_element_located as present
 
 PATH = "msedgedriver.exe"
 driver = webdriver.Edge(PATH)
+wait = WebDriverWait(driver, timeout=10)
 
 driver.get("https://www.americanexpress.com/en-us/account/login?DestPage=https%3A%2F%2Fglobal.americanexpress.com%2Foffers%2Feligible")
 
@@ -20,15 +24,17 @@ password.send_keys(input("\n\nWhat is your Amex PASSWORD? "))
 
 driver.find_element_by_id("loginSubmit").click()
 
-accept_offer_buttons = []
-
-while not accept_offer_buttons:
-    accept_offer_buttons = driver.find_elements_by_class_name("pad-0-l")
-
+wait.until(present((By.CLASS_NAME, "pad-0-l")))
+accept_offer_buttons = driver.find_elements_by_class_name("pad-0-l")
 accepted_offers = 0
-for offer in accept_offer_buttons:
+while offer := accept_offer_buttons.pop(0):
     if offer.text == "Add to Card":
         offer.click()
         accepted_offers += 1
+        try:
+            wait.until(present((By.CLASS_NAME, "offer-added-notification")))
+            accept_offer_buttons = driver.find_elements_by_class_name("pad-0-l")
+        except:
+            break
 
 print(f'\n\nAccepted {accepted_offers} offers\n')
